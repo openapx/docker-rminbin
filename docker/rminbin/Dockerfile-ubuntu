@@ -1,0 +1,33 @@
+# Version specific
+FROM ubuntu:24.04
+
+# -- add license file to root directory
+COPY LICENSE /LICENSE-rminbin
+RUN  chmod u+r-wx,g+r-wx,o+r-wx /LICENSE-rminbin
+
+
+# -- configuration files
+#    note: this is the input location for Shell scripts below
+
+COPY libs /opt/openapx/config/rminbin/
+
+RUN find /opt/openapx/config/rminbin -type f -exec chmod u+r-wx,g+r-wx,o-rwx {} \; && \
+    find /opt/openapx/config/rminbin -type d -exec chmod u+rx-w,g+rx-w,o-rwx {} \;
+
+
+# -- scripted sequence
+#    1) update OS to latest patch 
+#    2) add binary library dependencies
+#    3) download, build, check and install R from source
+#    4+5) secure log directory
+#    6) clean-up
+
+COPY --chmod=755 scripts/rminbin/bin-libs.sh scripts/rminbin/build_r.sh /scripts/
+RUN apt-get update -y && \
+    /scripts/bin-libs.sh && \
+    /scripts/build_r.sh && \
+    find /logs/R/rminbin -type f -exec chmod u+r-wx,g+r-wx,o-rwx {} \; && \
+    find /logs/R/rminbin -type d -exec chmod u+rx-w,g+rx-w,o-rwx {} \; && \
+    rm -Rf /scripts /sources
+
+
